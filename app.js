@@ -1,7 +1,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 function defaultApiBase(){ if (location.protocol === 'http:' && location.port === '4173') return location.protocol + '//' + location.hostname + ':4180/api'; return ''; }
-const state = { items: [], stream: null, scanTimer: null, lastCode: '', savedSlip: null, zxingReader: null, zxingControls: null, apiBaseUrl: localStorage.getItem('next-mobile-api-base') || defaultApiBase() };
+const state = { items: [], stream: null, scanTimer: null, lastCode: '', savedSlip: null, zxingReader: null, zxingControls: null, audioCtx: null, apiBaseUrl: localStorage.getItem('next-mobile-api-base') || defaultApiBase() };
 const sampleProducts = { '4901234567894': { code: '4901234567894', barcode: '4901234567894', name: 'サンプル飲料 500ml', price: 120, tax_category: 'reduced' }, '4909876543210': { code: '4909876543210', barcode: '4909876543210', name: '業務用タオル', price: 350, tax_category: 'std' } };
 const el = { camera: $('camera'), cameraText: $('cameraText'), scanState: $('scanState'), connectionState: $('connectionState'), connectionText: $('connectionText'), startCamera: $('startCamera'), stopCamera: $('stopCamera'), manualForm: $('manualForm'), manualCode: $('manualCode'), customerName: $('customerName'), issuerName: $('issuerName'), itemList: $('itemList'), itemTemplate: $('itemTemplate'), lineCount: $('lineCount'), receiptPreview: $('receiptPreview'), saveSlip: $('saveSlip'), saveState: $('saveState'), printBluetooth: $('printBluetooth'), downloadPrintData: $('downloadPrintData'), browserPrint: $('browserPrint'), clearAll: $('clearAll'), settingsOpen: $('settingsOpen'), settingsDialog: $('settingsDialog'), apiBaseUrl: $('apiBaseUrl'), settingsSave: $('settingsSave') };
 function apiRoot(){ return state.apiBaseUrl.replace(/\/$/, ''); }
@@ -25,6 +25,33 @@ async function updateConnection(){
     el.connectionText.textContent = state.apiBaseUrl + ' に接続できません。同期サーバーを起動してください。';
   }
 }
+function primeAudio(){
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    state.audioCtx = state.audioCtx || new AudioContext();
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
+  } catch {}
+}
+function notifyScanSuccess(){
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = state.audioCtx || new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.18);
+  } catch {}
+}
 function todayIso(){ return new Date().toISOString().slice(0,10); }
 function nowText(){ return new Intl.DateTimeFormat('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
 function itemKey(item){ return item.product_id ? 'p:' + item.product_id : 'c:' + item.code; }
@@ -33,7 +60,13 @@ async function lookupProduct(code){ const normalized = String(code || '').trim()
   try { const web = await api('GET','/products/web-lookup/' + encodeURIComponent(normalized)); if (web && web.ok && web.product) { alert('商品マスタ未登録のためWebから候補を抽出しました。内容を確認してください。'); return web.product; } } catch (e) {}
   return sampleProducts[normalized] || { code: normalized, barcode: normalized, name: '未登録商品 ' + normalized.slice(-4), price: 0, tax_category: 'std', needs_review: true };
 }
-async function addCode(code){ const product = await lookupProduct(code); if (!product) return; const item = { product_id: product.id || null, code: product.code || product.barcode || String(code).trim(), barcode: product.barcode || String(code).trim(), name: product.name || '未登録商品', price: Number(product.price) || 0, tax_category: product.tax_category || 'std', qty: 1 }; const key = itemKey(item); const existing = state.items.find((row)=>itemKey(row)===key); if (existing) existing.qty += 1; else state.items.unshift(item); state.lastCode = String(code).trim(); state.savedSlip = null; el.saveState.textContent = '未送信'; el.scanState.textContent = '登録済'; render(); }
+async function confirmUnknownProduct(product, code){
+  if (product && product.name && !String(product.name).startsWith('未登録商品')) return product;
+  const name = prompt('商品名をWebから取得できませんでした。商品名を入力してください。', product?.name && !String(product.name).startsWith('未登録商品') ? product.name : '');
+  if (!name || !name.trim()) return null;
+  return { ...(product || {}), code: String(code).trim(), barcode: String(code).trim(), name: name.trim(), price: Number(product?.price) || 0, tax_category: product?.tax_category || 'std', needs_review: true };
+}
+async function addCode(code){ let product = await lookupProduct(code); product = await confirmUnknownProduct(product, code); if (!product) return; notifyScanSuccess(); const item = { product_id: product.id || null, code: product.code || product.barcode || String(code).trim(), barcode: product.barcode || String(code).trim(), name: product.name || '未登録商品', price: Number(product.price) || 0, tax_category: product.tax_category || 'std', qty: 1 }; const key = itemKey(item); const existing = state.items.find((row)=>itemKey(row)===key); if (existing) existing.qty += 1; else state.items.unshift(item); state.lastCode = String(code).trim(); state.savedSlip = null; el.saveState.textContent = '未送信'; el.scanState.textContent = '登録済'; render(); }
 function setQty(key, qty){ const item = state.items.find((row)=>itemKey(row)===key); if (!item) return; item.qty = Math.max(0, Number.parseInt(qty,10) || 0); state.items = state.items.filter((row)=>row.qty>0); state.savedSlip = null; el.saveState.textContent = '未送信'; render(); }
 function renderItems(){ el.itemList.innerHTML = ''; el.lineCount.textContent = String(state.items.length); if (!state.items.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = '商品をスキャンすると、ここに追加されます。'; el.itemList.append(empty); return; } state.items.forEach((item)=>{ const row = el.itemTemplate.content.firstElementChild.cloneNode(true); const key = itemKey(item); row.querySelector('.item-name').textContent = item.name; row.querySelector('.item-code').textContent = item.barcode ? item.code + ' / ' + item.barcode : item.code; const input = row.querySelector('.qty-input'); input.value = item.qty; input.addEventListener('change',()=>setQty(key,input.value)); row.querySelector('.qty-minus').addEventListener('click',()=>setQty(key,item.qty-1)); row.querySelector('.qty-plus').addEventListener('click',()=>setQty(key,item.qty+1)); el.itemList.append(row); }); }
 function padRight(value,width){ const text=String(value==null?'':value); return text.length>=width ? text.slice(0,width) : text + ' '.repeat(width-text.length); }
@@ -66,6 +99,7 @@ async function startZxing(){
   });
 }
 async function startCamera(){
+  primeAudio();
   stopCamera();
   const localHost = ['localhost','127.0.0.1','::1'].includes(location.hostname);
   if (!window.isSecureContext && !localHost) {
