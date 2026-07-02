@@ -1,0 +1,9 @@
+{
+  "name": "nextモバイル",
+  "short_name": "nextモバイル",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f8f7",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "./icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
