@@ -331,6 +331,7 @@ async function submitScannerBuffer(){
   notifyScanSuccess();
   try { await addCode(code); } catch (error) { alert(error.message); }
   el.manualCode.value = '';
+  setTimeout(()=>el.manualCode && el.manualCode.focus(), 50);
 }
 function handleGlobalScannerKey(event){
   if (isEditableElement(event.target)) return;
@@ -350,6 +351,7 @@ function handleGlobalScannerKey(event){
   }
 }
 window.addEventListener('keydown', handleGlobalScannerKey);
+document.querySelector('.scanner-panel')?.addEventListener('click',()=>el.manualCode && el.manualCode.focus());
 el.soundTest && el.soundTest.addEventListener('click', async()=>{ const vibrated = navigator.vibrate ? navigator.vibrate([220, 80, 220]) : false; primeAudio(); const result = await playBeep(); if (el.soundStatus) el.soundStatus.textContent = result.ok ? '音テスト: OK (' + result.method + ') / バイブ: ' + (vibrated ? 'OK' : '未対応') : '音テスト: 失敗 ' + result.error; if (!result.ok) alert('音を鳴らせませんでした。スマホの消音モード、音量、ブラウザ設定を確認してください。'); });
 el.productSearchForm && el.productSearchForm.addEventListener('submit', async(event)=>{ event.preventDefault(); const rows = await searchProducts(el.productSearchText.value); renderSearchResults(rows); });
 el.startCamera.addEventListener('click', startCamera);
@@ -363,7 +365,8 @@ el.manualForm.addEventListener('submit', async(event)=>{
   notifyScanSuccess();
   try { await addCode(code); } catch (error) { alert(error.message); }
   el.manualCode.value='';
-  });
+  setTimeout(()=>el.manualCode && el.manualCode.focus(), 50);
+});
 el.saveSlip.addEventListener('click',()=>saveSlip().catch((error)=>alert(error.message)));
 el.printBluetooth.addEventListener('click', printBluetooth);
 el.downloadPrintData.addEventListener('click', downloadPrintData);
@@ -371,7 +374,8 @@ el.browserPrint.addEventListener('click',()=>window.print());
 [el.facilityName, el.floorName, el.residentName, el.customerName, el.issuerName].filter(Boolean).forEach((input)=>input.addEventListener('input', render));
 el.clearAll.addEventListener('click',()=>{ state.items=[]; state.lastCode=''; state.scannerBuffer=''; state.savedSlip=null; el.saveState.textContent='未送信'; render(); el.manualCode.focus(); });
 el.settingsOpen.addEventListener('click',()=>el.settingsDialog.showModal());
-el.settingsSave.addEventListener('click',()=>{ state.apiBaseUrl = el.apiBaseUrl.value.trim(); localStorage.setItem('next-mobile-api-base', state.apiBaseUrl); updateConnection(); el.settingsDialog.close(); });
+el.settingsSave.addEventListener('click',()=>{ state.apiBaseUrl = el.apiBaseUrl.value.trim(); localStorage.setItem('next-mobile-api-base', state.apiBaseUrl); updateConnection(); el.settingsDialog.close(); setTimeout(()=>el.manualCode && el.manualCode.focus(), 50); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 updateConnection(); render();
+setTimeout(()=>el.manualCode && el.manualCode.focus(), 500);
 

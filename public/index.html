@@ -23,9 +23,9 @@
           <h2>Bluetoothスキャナ読取</h2>
           <span id="scanState">待機中</span>
         </div>
-        <p class="hint">レジのように、そのままバーコードを読み取ります。施設名などの入力中だけは入力欄を優先します。</p>
+        <p class="hint">iPhoneでは最初にこの読取欄を一度タップしてからスキャンします。読み取り後は自動で次の読取待ちに戻ります。</p>
         <form class="manual-form scanner-form" id="manualForm">
-          <input id="manualCode" class="scanner-input" inputmode="numeric" autocomplete="off" readonly placeholder="読み取り番号がここに表示されます" />
+          <input id="manualCode" class="scanner-input" inputmode="numeric" autocomplete="off" placeholder="iPhoneは一度ここをタップしてからスキャン" />
           <button type="submit">手動追加</button>
         </form>
         <p id="soundStatus" class="sound-status">音・バイブ未テスト</p>
