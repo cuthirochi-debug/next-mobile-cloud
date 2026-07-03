@@ -55,6 +55,18 @@
         <label>担当者<input id="issuerName" autocomplete="name" value="nextモバイル" /></label>
       </section>
 
+      <section class="panel search-panel">
+        <div class="section-head">
+          <h2>商品検索</h2>
+          <button class="text-button" id="soundTest" type="button">音テスト</button>
+        </div>
+        <form class="manual-form" id="productSearchForm">
+          <input id="productSearchText" autocomplete="off" placeholder="商品名・商品コード・バーコード" />
+          <button type="submit">検索</button>
+        </form>
+        <div id="productSearchResults" class="search-results"></div>
+      </section>
+
       <section class="panel">
         <div class="section-head">
           <h2>登録商品</h2>
