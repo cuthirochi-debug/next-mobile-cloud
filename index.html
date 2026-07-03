@@ -20,22 +20,27 @@
 
       <section class="panel scanner-panel">
         <div class="section-head">
-          <h2>バーコード読取</h2>
+          <h2>Bluetoothスキャナ読取</h2>
           <span id="scanState">待機中</span>
         </div>
-        <div class="camera-box">
-          <video id="camera" playsinline muted></video>
-          <div class="scan-frame" aria-hidden="true"></div>
-          <p id="cameraText">カメラを起動してバーコードを枠に合わせてください。未対応ブラウザでは別方式で読取を試します。</p>
-        </div>
-        <div class="button-row">
-          <button class="primary" id="startCamera" type="button">カメラ起動</button>
-          <button class="secondary" id="stopCamera" type="button">停止</button>
-        </div>
-        <form class="manual-form" id="manualForm">
-          <input id="manualCode" inputmode="numeric" autocomplete="off" placeholder="バーコード・商品コード" />
-          <button type="submit">追加</button>
+        <p class="hint">iPhoneでは最初にこの読取欄を一度タップしてからスキャンします。読み取り後は自動で次の読取待ちに戻ります。</p>
+        <form class="manual-form scanner-form" id="manualForm">
+          <input id="manualCode" class="scanner-input" inputmode="numeric" autocomplete="off" placeholder="iPhoneは一度ここをタップしてからスキャン" />
+          <button type="submit">手動追加</button>
         </form>
+        <p id="soundStatus" class="sound-status">音・バイブ未テスト</p>
+        <details class="camera-fallback">
+          <summary>カメラ読取（予備）</summary>
+          <div class="camera-box">
+            <video id="camera" playsinline muted></video>
+            <div class="scan-frame" aria-hidden="true"></div>
+            <p id="cameraText">カメラは予備機能です。通常はBluetoothスキャナを使います。</p>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="startCamera" type="button">カメラ起動</button>
+            <button class="secondary" id="stopCamera" type="button">停止</button>
+          </div>
+        </details>
       </section>
 
       <section class="panel status-panel">
@@ -43,7 +48,7 @@
           <h2>接続</h2>
           <span id="connectionState">未設定</span>
         </div>
-        <p id="connectionText">設定からKatoNext APIまたはクラウド同期APIのURLを指定します。</p>
+        <p id="connectionText">同じサーバーの /api を参照します。</p>
       </section>
 
       <section class="panel">
@@ -51,8 +56,11 @@
           <h2>納品先</h2>
           <button class="text-button" id="clearAll" type="button">クリア</button>
         </div>
-        <label>顧客名<input id="customerName" autocomplete="organization" placeholder="納品先名" /></label>
+        <label>施設名<input id="facilityName" autocomplete="organization" placeholder="例: 〇〇介護施設" /></label>
+        <label>階数・フロア<input id="floorName" autocomplete="off" placeholder="例: 2階 / 東棟 / Aユニット" /></label>
+        <label>個人客名<input id="residentName" autocomplete="name" placeholder="例: 山田 花子 様" /></label>
         <label>担当者<input id="issuerName" autocomplete="name" value="nextモバイル" /></label>
+        <input id="customerName" type="hidden" />
       </section>
 
       <section class="panel search-panel">
@@ -77,13 +85,13 @@
 
       <section class="panel print-panel">
         <div class="section-head">
-          <h2>納品書</h2>
+          <h2>貼付用レシート</h2>
           <span id="saveState">未送信</span>
         </div>
         <pre id="receiptPreview" class="receipt-preview"></pre>
         <div class="button-row">
           <button class="primary" id="saveSlip" type="button">納品書送信</button>
-          <button class="secondary" id="printBluetooth" type="button">Bluetooth印刷</button>
+          <button class="secondary" id="printBluetooth" type="button">MP-B20印刷</button>
         </div>
         <button class="secondary full" id="downloadPrintData" type="button">MP-B20用データ保存</button>
         <button class="text-button full" id="browserPrint" type="button">画面から印刷</button>
@@ -96,8 +104,8 @@
           <h2>接続設定</h2>
           <button class="text-button" value="cancel">閉じる</button>
         </div>
-        <label>API URL<input id="apiBaseUrl" placeholder="例: https://sync.example.com/api" /></label>
-        <p class="hint">同じ配信元で動かす場合は空欄で利用できます。モバイル通信ではクラウド同期APIのURLを指定します。</p>
+        <label>API URL<input id="apiBaseUrl" placeholder="例: https://next-mobile-cloud.onrender.com/api" /></label>
+        <p class="hint">空欄なら同じサーバーの /api を使います。</p>
         <button class="primary full" id="settingsSave" value="default" type="button">保存</button>
       </form>
     </dialog>
